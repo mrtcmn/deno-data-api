@@ -11,7 +11,7 @@ export const MySqlClient = () => {
             user: "root",
             password: "testPass",
             database: "dataSet",
-            connectionLimit: 4,
+            connectionLimit: 999999,
         });
 
     }
