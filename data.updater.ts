@@ -5,18 +5,15 @@ import {readJson} from "https://deno.land/x/jsonfile@1.0.0/read_json.ts";
 const URL = "https://sheets.googleapis.com/v4/spreadsheets/1frVzuJCImzpP-zEhSrzuQGV0rUp3mFxV5OfG0z1UZYg/values/Dataset?key=AIzaSyAKvaEy7p0n7ATGr-XoCBuOpt7RDIudrAs";
 
 
-const dataInitialSetup = async () => {
-
-
 try {
-    //const remoteData = await fetch(URL).then(res => res.json());
-    //await writeJson('./dataset.json', remoteData.values, {spaces: 2});
-    // Update local mysql server with new data
+  // const remoteData = await fetch(URL).then(res => res.json());
+  // await writeJson('./dataset.json', remoteData.values, {spaces: 2});
+  // Update local mysql server with new data
 
-    let data: Array<[string,string,string,string,string,string,string,string,string]>  = await readJson('./dataset.json');
-    const client = await MySqlClient().get();
+  let data: Array<[string, string, string, string, string, string, string, string, string]> = await readJson('./dataset.json');
+  const client = await MySqlClient().get();
 
-    let initialTableSetting = await client.execute(`
+  let initialTableSetting = await client.execute(`
             create table if not exists dataSet
                 (
                     id int auto_increment primary key,
@@ -30,19 +27,24 @@ try {
                     user_id       varchar(255) charset utf8mb3 null,
                     user_session  varchar(255) charset utf8mb3 null
                 );
-                
+
             `)
 
-    console.log(initialTableSetting);
+  console.log(initialTableSetting);
 
 
-    let insertDataPromise = [];
+  let insertDataPromise = [];
 
-    for (let i = 1; i < data.length; i++) {
-        let entry = data[i];
-        insertDataPromise.push(client.execute(`
-            insert into dataSet(event_time,event_type, product_id,category_id , category_code, brand, price, user_id, user_session  ) 
-            values (
+  let newData = [...data];
+  let query = `
+            insert into dataSet(event_time,event_type, product_id,category_id , category_code, brand, price, user_id, user_session  )
+            values
+        `
+  for (let i = 1; i < newData.length; i++) {
+    let entry = newData[i];
+    try {
+
+      query += ` (
                 '${new Date(entry[0]).toISOString().split('T').join(" ").split('.')[0]}',
                 '${entry[1]}',
                 '${entry[2]}',
@@ -52,24 +54,26 @@ try {
                 '${entry[6]}',
                 '${entry[7]}',
                 '${entry[8]}'
-            )
-        `))
-        console.log("insert",i);
+            )`;
+
+      if (i !== newData.length - 1) {
+        query += `, `;
+      }
+
+      console.log("insert", i);
+
+    } catch (e) {
+      console.log(e);
     }
 
-    for (let i = 1; i < insertDataPromise.length / 10000; i++) {
-        let insertDataPromiseResult = await Promise.all(insertDataPromise.slice(i * 10000, (i + 1) * 10000));
-        console.log("finished", insertDataPromiseResult);
 
-    }
+  }
 
+  await client.execute(query);
 
+  console.log("complete")
 } catch (error) {
-    console.error(error);
+  console.error(error);
 }
 
-}
 
-
-
-dataInitialSetup();

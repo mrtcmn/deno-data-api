@@ -5,13 +5,12 @@ export const MySqlClient = () => {
     let client;
 
     function getMySqlConnection() {
-        client = mysql2.createPool({
-            host: "127.0.0.1",
+        client = mysql2.createConnection({
+            host: "localhost",
             port: 3306,
             user: "root",
             password: "testPass",
-            database: "dataSet",
-            connectionLimit: 999999,
+            database: "test",
         });
 
     }
