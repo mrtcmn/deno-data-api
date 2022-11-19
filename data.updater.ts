@@ -1,19 +1,25 @@
 import {writeJson} from 'https://deno.land/x/jsonfile/mod.ts';
 import {MySqlClient} from "./database/mysql.connect.ts";
 import {readJson} from "https://deno.land/x/jsonfile@1.0.0/read_json.ts";
+const GOOGLE_TOKEN = Deno.env.get("GOOGLE_TOKEN");
 
-const URL = "https://sheets.googleapis.com/v4/spreadsheets/1frVzuJCImzpP-zEhSrzuQGV0rUp3mFxV5OfG0z1UZYg/values/Dataset?key=AIzaSyAKvaEy7p0n7ATGr-XoCBuOpt7RDIudrAs";
+const URL = `https://sheets.googleapis.com/v4/spreadsheets/1frVzuJCImzpP-zEhSrzuQGV0rUp3mFxV5OfG0z1UZYg/values/Dataset?key=${GOOGLE_TOKEN}`;
+
+export const init = async () => {
 
 
-try {
-  // const remoteData = await fetch(URL).then(res => res.json());
-  // await writeJson('./dataset.json', remoteData.values, {spaces: 2});
-  // Update local mysql server with new data
+    try {
+        // This is the data from the google sheet
+        // Not actively used in the code, just for creating dataset.json
 
-  let data: Array<[string, string, string, string, string, string, string, string, string]> = await readJson('./dataset.json');
-  const client = await MySqlClient().get();
+        // const remoteData = await fetch(URL).then(res => res.json());
+        // await writeJson('./dataset.json', remoteData.values, {spaces: 2});
+        // Update local mysql server with new data
 
-  let initialTableSetting = await client.execute(`
+        let data: Array<[string, string, string, string, string, string, string, string, string]> = await readJson('./dataset.json');
+        const client = await MySqlClient().get();
+
+        let initialTableSetting = await client.execute(`
             create table if not exists dataSet
                 (
                     id int auto_increment primary key,
@@ -30,21 +36,16 @@ try {
 
             `)
 
-  console.log(initialTableSetting);
-
-
-  let insertDataPromise = [];
-
-  let newData = [...data];
-  let query = `
+        let newData = [...data];
+        let query = `
             insert into dataSet(event_time,event_type, product_id,category_id , category_code, brand, price, user_id, user_session  )
             values
         `
-  for (let i = 1; i < newData.length; i++) {
-    let entry = newData[i];
-    try {
+        for (let i = 1; i < newData.length; i++) {
+            let entry = newData[i];
+            try {
 
-      query += ` (
+                query += ` (
                 '${new Date(entry[0]).toISOString().split('T').join(" ").split('.')[0]}',
                 '${entry[1]}',
                 '${entry[2]}',
@@ -56,24 +57,26 @@ try {
                 '${entry[8]}'
             )`;
 
-      if (i !== newData.length - 1) {
-        query += `, `;
-      }
+                if (i !== newData.length - 1) {
+                    query += `, `;
+                }
 
-      console.log("insert", i);
+                console.log("insert", i);
 
-    } catch (e) {
-      console.log(e);
+            } catch (e) {
+                console.log(e);
+            }
+
+
+        }
+
+        await client.execute(query);
+
+        console.log("complete")
+        Deno.exit(1)
+    } catch (error) {
+        console.error(error);
     }
 
-
-  }
-
-  await client.execute(query);
-
-  console.log("complete")
-} catch (error) {
-  console.error(error);
 }
-
 
