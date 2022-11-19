@@ -1,6 +1,9 @@
 import {Application, Router} from "https://deno.land/x/oak/mod.ts";
-import {getQuery} from "https://deno.land/x/oak@v11.1.0/helpers.ts";
+import {getQuery} from "https://deno.land/x/oak/helpers.ts";
 import {MySqlClient} from "./database/mysql.connect.ts";
+import {init} from "./data.updater.ts";
+
+const PORT = Number(Deno.env.get("PORT")) | 8080;
 
 
 const metricsAvailableFilters: {
@@ -52,128 +55,131 @@ router
         context.response.body = "Hello world!";
     })
     .get("/metrics", async (context) => {
-        let allQueries = getQuery(context, {mergeParams: true});
-        const {id, dimensions, aggregate, ...restFilters} = allQueries
+
+        try {
+            let allQueries = getQuery(context, {mergeParams: true});
+            const {id, dimensions, aggregate, ...restFilters} = allQueries
 
 
-        if (id === "revenue") {
-            if (!(checkIfValidFilter(dimensions, id, "dimensions") && checkIfValidFilter(aggregate, id, "aggregate"))) {
-                return context.response.body = "Invalid filter";
-            }
-            const client = await MySqlClient().get();
-            let resultDb = await client.execute(`select avg(price) as averagePrice, brand from dataSet where event_type='purchase' group by ${dimensions}`);
-
-            if (!(resultDb && resultDb.length > 0)) {
-                return context.response.status = 404;
-            }
-
-            resultDb = resultDb[0].reduce((acc, dbItem) => {
-                if (dbItem.brand === '') {
-                    return acc;
+            if (id === "revenue") {
+                if (!(checkIfValidFilter(dimensions, id, "dimensions") && checkIfValidFilter(aggregate, id, "aggregate"))) {
+                    return context.response.body = "Invalid filter";
                 }
-                return {
-                    ...acc,
-                    [dbItem.brand]: [{
-                        value:
-                            (Math.round(Number(dbItem.averagePrice).toFixed(2) * 100) / 100).toFixed(2)
-                    }]
+                const client = await MySqlClient().get();
+                let resultDb = await client.execute(`select avg(price) as averagePrice, brand from dataSet where event_type='purchase' group by ${dimensions}`);
+
+                if (!(resultDb && resultDb.length > 0)) {
+                    return context.response.status = 404;
                 }
-            }, {})
 
-            return context.response.body = {
-                metric: id,
-                dimensions: [dimensions],
-                aggregation: aggregate,
-                data: resultDb
-            };
-        }
+                resultDb = resultDb[0].reduce((acc, dbItem) => {
+                    if (dbItem.brand === '') {
+                        return acc;
+                    }
+                    return {
+                        ...acc,
+                        [dbItem.brand]: [{
+                            value:
+                                (Math.round(Number(dbItem.averagePrice).toFixed(2) * 100) / 100).toFixed(2)
+                        }]
+                    }
+                }, {})
 
-        if (id === "sessions") {
-            if (!(checkIfValidFilter(dimensions, id, "dimensions") && checkIfValidFilter(aggregate, id, "aggregate"))) {
-                return context.response.body = "Invalid filter";
+                return context.response.body = {
+                    metric: id,
+                    dimensions: [dimensions],
+                    aggregation: aggregate,
+                    data: resultDb
+                };
             }
-            const client = await MySqlClient().get();
 
-            // This query works with if first weekday is monday. Otherwise, change WEEK to WK.
-            let resultDb = await client.execute(`
+            if (id === "sessions") {
+                if (!(checkIfValidFilter(dimensions, id, "dimensions") && checkIfValidFilter(aggregate, id, "aggregate"))) {
+                    return context.response.body = "Invalid filter";
+                }
+                const client = await MySqlClient().get();
+
+                // This query works with if first weekday is monday. Otherwise, change WEEK to WK.
+                let resultDb = await client.execute(`
                 select count(distinct user_session) as uniqueUserSession, weekT.week from dataSet mainT
                     inner join ( select EXTRACT(WEEK from event_time) as week, id from dataSet ) weekT on weekT.id =mainT.id
                     group by weekT.week
                     `);
 
-            if (!(resultDb && resultDb.length > 0)) {
-                return context.response.status = 404;
+                if (!(resultDb && resultDb.length > 0)) {
+                    return context.response.status = 404;
+                }
+
+                resultDb = resultDb[0].reduce((acc, dbItem) => {
+                    if (dbItem.brand === '') {
+                        return acc;
+                    }
+                    return {
+                        ...acc,
+                        [dbItem.week]: [{
+                            value: String(dbItem.uniqueUserSession)
+                        }]
+                    }
+                }, {})
+
+                return context.response.body = {
+                    metric: id,
+                    dimensions: [dimensions],
+                    aggregation: aggregate,
+                    data: resultDb
+                };
             }
 
-            resultDb = resultDb[0].reduce((acc, dbItem) => {
-                if (dbItem.brand === '') {
-                    return acc;
+            if (id === "conversion") {
+                if (!(checkIfValidFilter(dimensions, id, "dimensions") && checkIfValidFilter(aggregate, id, "aggregate"))) {
+                    return context.response.body = "Invalid filter";
                 }
-                return {
-                    ...acc,
-                    [dbItem.week]: [{
-                        value: String(dbItem.uniqueUserSession)
-                    }]
-                }
-            }, {})
+                const client = await MySqlClient().get();
 
-            return context.response.body = {
-                metric: id,
-                dimensions: [dimensions],
-                aggregation: aggregate,
-                data: resultDb
-            };
-        }
-
-        if (id === "conversion") {
-            if (!(checkIfValidFilter(dimensions, id, "dimensions") && checkIfValidFilter(aggregate, id, "aggregate"))) {
-                return context.response.body = "Invalid filter";
-            }
-            const client = await MySqlClient().get();
-
-            // s
-            let query = `
+                // s
+                let query = `
              select round(( calc.purchaseCount/calc.uniqueUserSession * 100 ),2) as conversionRate , calc.purchaseCount,calc.uniqueUserSession, calc.ymd from (select count(distinct user_session) as uniqueUserSession, count(distinct if(event_type = 'purchase', user_session, null) ) as purchaseCount, dayT.ymd from dataSet mainT
                 inner join ( select DATE_FORMAT(event_time, '%Y-%m-%d') as ymd, id from dataSet ) dayT on dayT.id =mainT.id
                 group by dayT.ymd) calc
              `;
 
-            let resultDb = await client.execute(query);
+                let resultDb = await client.execute(query);
 
-            if (!(resultDb && resultDb.length > 0)) {
-                return context.response.status = 404;
-            }
-
-            resultDb = resultDb[0].reduce((acc, dbItem) => {
-                return {
-                    ...acc,
-                    [dbItem.ymd]: [{
-                        sessions: Number(dbItem.uniqueUserSession),
-                        purchases: Number(dbItem.purchaseCount),
-                        value: String(dbItem.conversionRate)
-                    }]
+                if (!(resultDb && resultDb.length > 0)) {
+                    return context.response.status = 404;
                 }
-            }, {})
 
-            return context.response.body = {
-                metric: id,
-                dimensions: [dimensions],
-                aggregation: aggregate,
-                data: resultDb
-            };
-        }
+                resultDb = resultDb[0].reduce((acc, dbItem) => {
+                    return {
+                        ...acc,
+                        [dbItem.ymd]: [{
+                            sessions: Number(dbItem.uniqueUserSession),
+                            purchases: Number(dbItem.purchaseCount),
+                            value: String(dbItem.conversionRate)
+                        }]
+                    }
+                }, {})
 
-        if (id === "net-revenue") {
-            if (!(checkIfValidFilter(dimensions, id, "dimensions") && checkIfValidFilter(aggregate, id, "aggregate"))) {
-                return context.response.body = "Invalid filter";
+                return context.response.body = {
+                    metric: id,
+                    dimensions: [dimensions],
+                    aggregation: aggregate,
+                    data: resultDb
+                };
             }
 
-            const startDate = restFilters['filter.date.from'];
-            const endDate = restFilters['filter.date.to'];
+            if (id === "net-revenue") {
 
-            const client = await MySqlClient().get();
+                if (!(checkIfValidFilter(dimensions, id, "dimensions") && checkIfValidFilter(aggregate, id, "aggregate"))) {
+                    return context.response.body = "Invalid filter";
+                }
 
-            let query = `
+                const startDate = restFilters['filter.date.from'];
+                const endDate = restFilters['filter.date.to'];
+
+                const client = await MySqlClient().get();
+
+                let query = `
             select (prices.purchases - prices.refunds) as netRevenue, prices.user_id
                 from (select sum(if(event_type = 'purchase', price, 0)) as purchases,
                 sum(if(event_type = 'refund', price, 0))   as refunds,
@@ -185,34 +191,45 @@ router
             where prices.purchases <> 0
             `;
 
-            let resultDb = await client.execute(query);
+                let resultDb = await client.execute(query);
 
-            if (!(resultDb && resultDb.length > 0)) {
-                return context.response.status = 404;
-            }
-
-            resultDb = resultDb[0].reduce((acc, dbItem) => {
-                return {
-                    ...acc,
-                    [dbItem.user_id]: [{
-                        value: Number(dbItem.netRevenue)
-                    }]
+                if (!(resultDb && resultDb.length > 0)) {
+                    return context.response.status = 404;
                 }
-            }, {})
 
-            return context.response.body = {
-                metric: id,
-                dimensions: [dimensions],
-                aggregation: aggregate,
-                "filters": {
-                    "date": {
-                        "from": startDate,
-                        "to": endDate
+                resultDb = resultDb[0].reduce((acc, dbItem) => {
+                    return {
+                        ...acc,
+                        [dbItem.user_id]: [{
+                            value: Number(dbItem.netRevenue)
+                        }]
                     }
-                },
-                data: resultDb
-            };
+                }, {})
+
+                return context.response.body = {
+                    metric: id,
+                    dimensions: [dimensions],
+                    aggregation: aggregate,
+                    "filters": {
+                        "date": {
+                            "from": startDate,
+                            "to": endDate
+                        }
+                    },
+                    data: resultDb
+                };
+            }
+        } catch (e) {
+            context.response.status = 500;
+            context.response.body = e.message;
         }
+
+
+    })
+    .get("/init", async (context) => {
+
+        await init();
+        context.response.body = {msg: "Init done"};
 
     });
 
@@ -220,4 +237,6 @@ const app = new Application();
 app.use(router.routes());
 app.use(router.allowedMethods());
 
-await app.listen({port: 8000});
+await app.listen({port: PORT});
+
+console.log(`Listening on port ${PORT}`);
