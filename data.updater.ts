@@ -71,9 +71,6 @@ export const init = async () => {
         }
 
         await client.execute(query);
-
-        console.log("complete")
-        Deno.exit(1)
     } catch (error) {
         console.error(error);
     }
