@@ -11,9 +11,14 @@ const metricsAvailableFilters: { [key: string]: string } = {
     "sessions": {
         aggregate: ["distinct"],
         dimensions: ["date.weeknum"],
-    }, "conversion": {
+    },
+    "conversion": {
         aggregate: ["distinct"],
         dimensions: ["date"],
+    },
+    "net-revenue": {
+        aggregate: ["sum"],
+        dimensions: ["customer"],
     }
 }
 
@@ -43,7 +48,8 @@ router
     })
     .get("/metrics", async (context) => {
         let allQueries = getQuery(context, {mergeParams: true});
-        const {id, dimensions, aggregate} = allQueries
+        const {id, dimensions, aggregate, ...restFilters} = allQueries
+
 
         if (id === "revenue") {
             if (!(checkIfValidFilter(dimensions, id, "dimensions") && checkIfValidFilter(aggregate, id, "aggregate"))) {
@@ -148,6 +154,57 @@ router
                 metric: id,
                 dimensions: [dimensions],
                 aggregation: aggregate,
+                data: resultDb
+            };
+        }
+
+        if (id === "net-revenue") {
+            if (!(checkIfValidFilter(dimensions, id, "dimensions") && checkIfValidFilter(aggregate, id, "aggregate"))) {
+                return context.response.body = "Invalid filter";
+            }
+
+            const startDate = restFilters['filter.date.from'];
+            const endDate = restFilters['filter.date.to'];
+
+            const client = await MySqlClient().get();
+
+            let query = `
+            select (prices.purchases - prices.refunds) as netRevenue, prices.user_id
+                from (select sum(if(event_type = 'purchase', price, 0)) as purchases,
+                sum(if(event_type = 'refund', price, 0))   as refunds,
+                user_id
+                from (select user_id, event_time, event_type, price
+                    from dataSet
+                    where event_time BETWEEN CAST('${startDate}' AS DATE) AND CAST('${endDate}' AS DATE)) dataG
+                    group by user_id) as prices
+            where prices.purchases <> 0
+            `;
+
+            let resultDb = await client.execute(query);
+
+            if (!(resultDb && resultDb.length > 0)) {
+                return context.response.status = 404;
+            }
+
+            resultDb = resultDb[0].reduce((acc, dbItem) => {
+                return {
+                    ...acc,
+                    [dbItem.user_id]: [{
+                        value: Number(dbItem.netRevenue)
+                    }]
+                }
+            }, {})
+
+            return context.response.body = {
+                metric: id,
+                dimensions: [dimensions],
+                aggregation: aggregate,
+                "filters": {
+                    "date": {
+                        "from": startDate,
+                        "to": endDate
+                    }
+                },
                 data: resultDb
             };
         }
