@@ -12,11 +12,11 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:8000/metrics?id=revenue&dimensions=brand&aggregate=avg",
+					"raw": "localhost:8080/metrics?id=revenue&dimensions=brand&aggregate=avg",
 					"host": [
 						"localhost"
 					],
-					"port": "8000",
+					"port": "8080",
 					"path": [
 						"metrics"
 					],
@@ -44,11 +44,11 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:8000/metrics?id=sessions&dimensions=date.weeknum&aggregate=distinct",
+					"raw": "localhost:8080/metrics?id=sessions&dimensions=date.weeknum&aggregate=distinct",
 					"host": [
 						"localhost"
 					],
-					"port": "8000",
+					"port": "8080",
 					"path": [
 						"metrics"
 					],
@@ -76,11 +76,11 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:8000/metrics?id=conversion&dimensions=date&aggregate=distinct",
+					"raw": "localhost:8080/metrics?id=conversion&dimensions=date&aggregate=distinct",
 					"host": [
 						"localhost"
 					],
-					"port": "8000",
+					"port": "8080",
 					"path": [
 						"metrics"
 					],
@@ -108,11 +108,11 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:8000/metrics?id=net-revenue&dimensions=customer&aggregate=sum&filter.date.from=2020-10-03&filter.date.to=2020-10-09",
+					"raw": "localhost:8080/metrics?id=net-revenue&dimensions=customer&aggregate=sum&filter.date.from=2020-10-03&filter.date.to=2020-10-05",
 					"host": [
 						"localhost"
 					],
-					"port": "8000",
+					"port": "8080",
 					"path": [
 						"metrics"
 					],
@@ -135,7 +135,7 @@
 						},
 						{
 							"key": "filter.date.to",
-							"value": "2020-10-09"
+							"value": "2020-10-05"
 						}
 					]
 				}
@@ -148,35 +148,13 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "localhost:8000/metrics?id=net-revenue&dimensions=customer&aggregate=sum&filter.date.from=2020-10-03&filter.date.to=2020-10-09",
+					"raw": "localhost:8080/init",
 					"host": [
 						"localhost"
 					],
-					"port": "8000",
+					"port": "8080",
 					"path": [
-						"metrics"
-					],
-					"query": [
-						{
-							"key": "id",
-							"value": "net-revenue"
-						},
-						{
-							"key": "dimensions",
-							"value": "customer"
-						},
-						{
-							"key": "aggregate",
-							"value": "sum"
-						},
-						{
-							"key": "filter.date.from",
-							"value": "2020-10-03"
-						},
-						{
-							"key": "filter.date.to",
-							"value": "2020-10-09"
-						}
+						"init"
 					]
 				}
 			},
