@@ -1,0 +1,186 @@
+{
+	"info": {
+		"_postman_id": "82fd1b2c-524b-4bda-ba51-ac5e03d21f76",
+		"name": "data",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "279723"
+	},
+	"item": [
+		{
+			"name": "Avg. Revenue by Brand",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8000/metrics?id=revenue&dimensions=brand&aggregate=avg",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"metrics"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "revenue"
+						},
+						{
+							"key": "dimensions",
+							"value": "brand"
+						},
+						{
+							"key": "aggregate",
+							"value": "avg"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Weekly Sessions",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8000/metrics?id=sessions&dimensions=date.weeknum&aggregate=distinct",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"metrics"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "sessions"
+						},
+						{
+							"key": "dimensions",
+							"value": "date.weeknum"
+						},
+						{
+							"key": "aggregate",
+							"value": "distinct"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Daily Conversion Date %",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8000/metrics?id=conversion&dimensions=date&aggregate=distinct",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"metrics"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "conversion"
+						},
+						{
+							"key": "dimensions",
+							"value": "date"
+						},
+						{
+							"key": "aggregate",
+							"value": "distinct"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Net Revenue of Each Customer",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8000/metrics?id=net-revenue&dimensions=customer&aggregate=sum&filter.date.from=2020-10-03&filter.date.to=2020-10-09",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"metrics"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "net-revenue"
+						},
+						{
+							"key": "dimensions",
+							"value": "customer"
+						},
+						{
+							"key": "aggregate",
+							"value": "sum"
+						},
+						{
+							"key": "filter.date.from",
+							"value": "2020-10-03"
+						},
+						{
+							"key": "filter.date.to",
+							"value": "2020-10-09"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Database init",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:8000/metrics?id=net-revenue&dimensions=customer&aggregate=sum&filter.date.from=2020-10-03&filter.date.to=2020-10-09",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"metrics"
+					],
+					"query": [
+						{
+							"key": "id",
+							"value": "net-revenue"
+						},
+						{
+							"key": "dimensions",
+							"value": "customer"
+						},
+						{
+							"key": "aggregate",
+							"value": "sum"
+						},
+						{
+							"key": "filter.date.from",
+							"value": "2020-10-03"
+						},
+						{
+							"key": "filter.date.to",
+							"value": "2020-10-09"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
