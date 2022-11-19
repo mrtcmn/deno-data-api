@@ -17,8 +17,6 @@ export const MySqlClient = () => {
             database: DB_DATABASE,
         });
 
-        console.error("Connected to MySQL",DB_HOST,DB_USER);
-
     }
     function get() {
         if (!client) {
