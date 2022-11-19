@@ -229,8 +229,11 @@ router
     })
     .get("/init", async (context) => {
 
-        await init();
-        return context.response.body = {msg: "Init done"};
+        let result = await init();
+        if ( result === true) {
+            return context.response.body = {msg: "Init done"};
+        }
+        return context.response.body = {msg: "Init fail. Check logs."};
 
     });
 

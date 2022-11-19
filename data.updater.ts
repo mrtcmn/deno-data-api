@@ -20,21 +20,23 @@ export const init = async () => {
         const client = await MySqlClient().get();
 
         let initialTableSetting = await client.execute(`
-            drop table if exists dataSet;
-            create table dataSet
-            (
-                id            int auto_increment primary key,
-                event_time    datetime                     null,
-                event_type    varchar(255) charset utf8mb3 null,
-                product_id    varchar(255) charset utf8mb3 null,
-                category_code varchar(255) charset utf8mb3 null,
-                category_id   varchar(255) charset utf8mb3 null,
-                brand         varchar(255) charset utf8mb3 null,
-                price         int                          null,
-                user_id       varchar(255) charset utf8mb3 null,
-                user_session  varchar(255) charset utf8mb3 null
-            );
-`)
+        drop table if exists dataSet;
+        `);
+        let initialTableSetting2 = await client.execute(`
+          create table dataSet
+                (
+                    id int auto_increment primary key,
+                    event_time    datetime                     null,
+                    event_type    varchar(255) charset utf8mb3 null,
+                    product_id    varchar(255) charset utf8mb3 null,
+                    category_code varchar(255) charset utf8mb3 null,
+                    category_id   varchar(255) charset utf8mb3 null,
+                    brand         varchar(255) charset utf8mb3 null,
+                    price         int                          null,
+                    user_id       varchar(255) charset utf8mb3 null,
+                    user_session  varchar(255) charset utf8mb3 null
+                );
+        `);
 
         let newData = [...data];
         let query = `
@@ -71,8 +73,11 @@ export const init = async () => {
         }
 
         await client.execute(query);
+
+        return true;
     } catch (error) {
         console.error(error);
+        return false;
     }
 
 }
