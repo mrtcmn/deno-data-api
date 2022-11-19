@@ -3,7 +3,12 @@ import {getQuery} from "https://deno.land/x/oak@v11.1.0/helpers.ts";
 import {MySqlClient} from "./database/mysql.connect.ts";
 
 
-const metricsAvailableFilters: { [key: string]: string } = {
+const metricsAvailableFilters: {
+    [key: string]: {
+        aggregate: string[],
+        dimensions: string[]
+    }
+} = {
     "revenue": {
         aggregate: ["avg"],
         dimensions: ["event_type", "product_id", "category_id", "category_code", "brand", "user_id", "user_session"],
@@ -22,7 +27,7 @@ const metricsAvailableFilters: { [key: string]: string } = {
     }
 }
 
-const checkIfValidFilter = (filter: string, id: string, whichMetric: string): boolean => {
+const checkIfValidFilter = (filter: string, id: string, whichMetric: 'aggregate' | 'dimensions'): boolean => {
     try {
         return metricsAvailableFilters[id][whichMetric].includes(filter);
     } catch (e) {
