@@ -220,8 +220,9 @@ router
                 };
             }
         } catch (e) {
+            console.error(e);
             context.response.status = 500;
-            context.response.body = e.message;
+            return context.response.body = {msg: "Internal server error"};
         }
 
 
@@ -229,7 +230,7 @@ router
     .get("/init", async (context) => {
 
         await init();
-        context.response.body = {msg: "Init done"};
+        return context.response.body = {msg: "Init done"};
 
     });
 
