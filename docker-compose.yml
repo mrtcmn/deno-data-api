@@ -1,4 +1,7 @@
-version: '3.3'
+version: "3.8"
+networks:
+  data-app:
+    driver: bridge
 services:
   db:
     image: mysql:8.0
@@ -10,9 +13,34 @@ services:
       - MYSQL_ROOT_PASSWORD=testPass
     ports:
       - '3306:3306'
+    expose:
+      - "3306"
+    networks:
+      - data-app
     volumes:
       - db:/var/lib/mysql
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+  api:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    image: deno-data-api-server:dev
+    container_name: deno-data-api-server
+    restart: always
+    depends_on:
+      - db
+    volumes:
+      - ./:/usr/app
+    ports:
+      - 8080:8080
+    environment:
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_DATABASE=test
+      - DB_PASSWORD=testPass
+      - PORT=8080
+    networks:
+      - data-app
 volumes:
   db:
     driver: local
